@@ -1,0 +1,5 @@
+#!/bin/sh
+COLUMNS=`tput cols`
+LINES=`tput lines`
+TERM=xterm
+kubectl exec -i -t $@ env COLUMNS=$COLUMNS LINES=$LINES TERM=$TERM bash
