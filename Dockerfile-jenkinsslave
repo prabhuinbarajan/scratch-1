@@ -1,0 +1,10 @@
+FROM gcr.io/cloud-solutions-images/jenkins-k8s-slave
+#FROM jenkinsci/jnlp-slave
+USER root
+RUN apt-get update
+RUN wget -O /tmp/distribute_setup.py https://svn.apache.org/repos/asf/oodt/tools/oodtsite.publisher/trunk/distribute_setup.py
+RUN python /tmp/distribute_setup.py
+RUN apt-get install -y  build-essential libffi-dev python-dev tree jq
+RUN easy_install pip
+RUN pip install shyaml
+RUN gcloud components update
