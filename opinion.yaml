@@ -1,0 +1,68 @@
+---
+pipeline: build_bake_test_deployment
+version: v0.1
+status: active #deprecated, disabled, draft, published
+stages:
+  sequence:
+    overlay:
+      required: true ### all apps need to have securityoverlay
+    build:
+      unit_tests: 
+        required: true  #cannot skip
+        minimum_line_coverage: 65% # coverage drops below 65% , fail the build
+      lint:
+        required: true   #cannot skip
+        acceptable_error_level: warning
+      static_analysis:
+        required: true  #cannot skip
+        acceptable_error_level: warning  # no critical or high errors allowed
+      compliance:
+        required: true  # license compliance
+        acceptable_error_level : info  # no warnings, high or critical errors
+      notify: 
+         - [ qa, developers ]
+    bake:  # container production requirements
+      secure: true ## only trusted registry
+      enable_external: false ## cannot push to external registry
+      enable_hardening : true ### enable app armor profiles
+      enable_apm: true
+      enable_logging: true
+      notify: 
+         - [ qa, developers ]
+    deploy:
+      sequence:
+        parallel:
+          qa:
+            tests.functional:
+              minimum_coverage: 70%
+              notify: 
+               - [ release_managers, qa, developers, qa_operators ]
+          perf:
+            tests.performance:
+              minimum_latency_baseline_shift: 5%
+              absolute_latency: 300ms
+              notify: 
+               - [ release_managers, qa, developers, qa_operators ]
+        security:
+          tests.security:
+            static_tests:
+              required: true
+              acceptable_error_level: info
+              notify: 
+               - [ release_managers, qa, developers, security ]          
+            penetration_tests:
+              required: true
+              acceptable_error_level: info
+              notify: 
+               - [ release_managers, qa, developers, security ]
+        change_management:
+            notify: 
+              - [ release_managers, qa, developers, security,qa_operators, prod_operators ]
+        production:
+            enable_rollback: true
+            supported_deployment_strategies : 
+              - green_blue  #  (rolling or canary)
+notification:
+  notification_strategy:
+      - fail # notify failures only
+
