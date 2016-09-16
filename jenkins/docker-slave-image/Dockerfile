@@ -10,3 +10,4 @@ RUN apt-get update -y
 RUN apt-get install -y jq
 RUN curl https://sdk.cloud.google.com | bash && mv google-cloud-sdk /opt
 RUN gcloud components install kubectl
+RUN pip install yaql
