@@ -366,7 +366,7 @@
     "Resources": {
       "DDCBucket" : {
       "Type" : "AWS::S3::Bucket",
-	  "DeletionPolicy" : "Retain"
+      "DeletionPolicy" : "Retain"
     },
         "vpc": {
             "Type": "AWS::EC2::VPC",
@@ -810,9 +810,9 @@
                         },
                         "Type": "A",
                         "AliasTarget" : {
-				"HostedZoneId" : { "Fn::GetAtt" : ["ControllerElasticLoadBalancer", "CanonicalHostedZoneNameID"] },
-      			"DNSName" : { "Fn::GetAtt" : ["ControllerElasticLoadBalancer","DNSName"] }
-				}
+                "HostedZoneId" : { "Fn::GetAtt" : ["ControllerElasticLoadBalancer", "CanonicalHostedZoneNameID"] },
+                "DNSName" : { "Fn::GetAtt" : ["ControllerElasticLoadBalancer","DNSName"] }
+                }
 
                     }
                 ]
@@ -875,30 +875,6 @@
         "WaitHandle02": {
             "Type": "AWS::CloudFormation::WaitConditionHandle",
             "Properties": {}
-        },
-        "WaitCondition02": {
-            "Type": "AWS::CloudFormation::WaitCondition",
-            "DependsOn": "DTRreplica01",
-            "Properties": {
-                "Handle": {
-                    "Ref": "WaitHandle02"
-                },
-                "Timeout": "1800"
-            }
-        },
-        "WaitHandle03": {
-            "Type": "AWS::CloudFormation::WaitConditionHandle",
-            "Properties": {}
-        },
-        "WaitCondition03": {
-            "Type": "AWS::CloudFormation::WaitCondition",
-            "DependsOn": "DTRreplica02",
-            "Properties": {
-                "Handle": {
-                    "Ref": "WaitHandle03"
-                },
-                "Timeout": "1800"
-            }
         },
 
         "Jumphost": {
@@ -1437,9 +1413,9 @@
                 "LaunchConfigurationName": {
                     "Ref": "ControllerReplica"
                 },
-                "MinSize": "2",
-                "MaxSize": "2",
-                "DesiredCapacity": "2",
+                "MinSize": "0",
+                "MaxSize": "0",
+                "DesiredCapacity": "0",
                 "LoadBalancerNames": [{
                     "Ref": "ControllerElasticLoadBalancer"
                 }],
@@ -1761,323 +1737,6 @@
          }
       },
 
-        "DTRreplica02": {
-            "DependsOn": "WaitCondition02",
-            "Type": "AWS::EC2::Instance",
-            "Properties": {
-                "AvailabilityZone": {
-                    "Fn::Select": [
-                        "1",
-                        {
-                            "Fn::GetAZs": {
-                                "Ref": "AWS::Region"
-                            }
-                        }
-                    ]
-                },
-                "InstanceType": {
-                    "Ref": "DTRInstanceType"
-                },
-                "KeyName": {
-                    "Ref": "KeyName"
-                },
-                "ImageId": {
-                    "Fn::FindInMap": [
-                        "AWSRegionArch2AMI",
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        {
-                            "Fn::FindInMap": [
-                                "AWSInstanceType2Arch",
-                                {
-                                    "Ref": "DTRInstanceType"
-                                },
-                                "Arch"
-                            ]
-                        }
-                    ]
-                },
-                "NetworkInterfaces": [
-                    {
-                        "AssociatePublicIpAddress": "true",
-                        "DeleteOnTermination": "true",
-                        "DeviceIndex": "0",
-                        "SubnetId": {
-                            "Ref": "PrivateSubnetAz2"
-                        },
-                        "GroupSet": [
-                            {
-                                "Ref": "DefaultSG"
-                            }
-                        ]
-                    }
-                ],
-                "BlockDeviceMappings": [
-                    {
-                        "DeviceName": "/dev/sda1",
-                        "Ebs": { 
-                            "VolumeSize": { "Ref": "RootVolumeSize" },
-                            "VolumeType": "gp2"
-                        }
-                    }
-                ],
-                "UserData": {
-                    "Fn::Base64": {
-                        "Fn::Join": [
-                            "\n",
-                            [
-                                "#!/bin/bash -ex",
-                                "echo 'Installing Docker'",
-                                "sudo hostname dtr-replica-02\n",
-                                "export HOSTNAME=dtr-replica-02 \n",
-                                "sudo sed -i 's/localhost/dtr-replica-02/g' /etc/hosts \n",
-                                "echo $HOSTNAME | sudo tee  /etc/hostname \n",
-                                "curl -sSL https://packages.docker.com/1.11/install.sh | sh \n",
-                                "sudo usermod -aG docker ubuntu \n",
-                                "echo 'Install CFN-helper Package' ",
-                                "apt-get -y install python-pip unzip",
-                                "pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz",
-                                "cp /usr/local/init/ubuntu/cfn-hup /etc/init.d/cfn-hup",
-                                "chmod +x /etc/init.d/cfn-hup",
-                                "update-rc.d cfn-hup defaults",
-                                "service cfn-hup start",
-                                "echo 'Install AWS CLI'",
-                                "curl \"https://s3.amazonaws.com/aws-cli/awscli-bundle.zip\" -o \"awscli-bundle.zip\"",
-                                "unzip awscli-bundle.zip",
-                                "./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws",
-
-                                {
-                                    "Fn::Join": [
-                                        "",
-                                        [
-                                            "#!/bin/bash\n",
-                                            "export PRIVATE_IP=`curl http://169.254.169.254/latest/meta-data/local-ipv4` \n",
-                                            "export UCP_URL=https://",
-                                            {
-                                                "Fn::GetAtt": [
-                                                    "Controller",
-                                                    "PrivateIp"
-                                                ]
-                                            },
-                                            "\n",
-                                            "export DTRFQDN=",
-                                            {
-                                                "Ref": "DTRFQDN"
-                                            },
-                                            "\n",
-                                            "export UCPFQDN=",
-                                            {
-                                                "Ref": "UCPFQDN"
-                                            },
-                                            "\n",
-                                            "curl --insecure $UCP_URL/ca > ca.pem\n",
-                                            "export UCP_FINGERPRINT=$(openssl x509 -in ca.pem -noout -sha256 -fingerprint | awk -F= '{ print $2 }' )\n",
-                                            "# Installing UCP Node\n",
-                                            "sudo -E docker run --rm -i --name ucp -e UCP_ADMIN_USER=admin -e UCP_ADMIN_PASSWORD=ddconaws -v /var/run/docker.sock:/var/run/docker.sock docker/ucp:1.1.3 join --debug --url $UCP_URL --fingerprint $UCP_FINGERPRINT \n",
-                                            "# Installing DTR Replica\n",
-                                            "sleep 60 \n",
-                                            "sudo -E docker run --rm -i docker/dtr:2.0.3 join --debug --ucp-url https://$UCPFQDN --ucp-node  dtr-replica-02 --ucp-username admin --ucp-password ddconaws --ucp-insecure-tls --replica-id 000000000002 --existing-replica-id 000000000001 \n",
-                                            "# Wait Handle: DTR tests itself to ensure it's responding before signaling CFN. Try in an infinite loop. Wait Handle will tear down stack if timeout exceeded\n",
-                                            "# Defining function:\n",
-                                            "checkcontroller()\n",
-                                            "{\n",
-                                            "if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$PRIVATE_IP/load_balancer_status) -eq 200 ]]\n",
-                                            "then /usr/local/bin/cfn-signal -s true '",
-                                            {
-                                                "Ref": "WaitHandle03"
-                                            },
-                                            "'\n",
-                                            "else sleep 3 && echo \"checking Controller until CFN times out..\" && checkcontroller\n",
-                                            "fi\n",
-                                            "}\n",
-                                            "# Calling function:\n",
-                                            "checkcontroller\n",
-                                            "#Register instance with ELB\n",
-                                            "INSTANCE=\"$(curl 169.254.169.254/latest/meta-data/instance-id)\"\n",
-                                            "aws elb register-instances-with-load-balancer --load-balancer-name ",
-                                            { "Ref": "DTRElasticLoadBalancer" },
-                                             " --instances $INSTANCE",
-                                             " --region ", {
-                                          "Ref": "AWS::Region"
-                                          }
-                                        ]
-                                    ]
-                                }
-                            ]
-                        ]
-                    }
-                },
-                "IamInstanceProfile": {"Ref": "DTRReplicaProfile"},
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    {
-                                        "Ref": "AWS::StackName"
-                                    },
-                                    "DTRreplica02"
-                                ]
-                            ]
-                        }
-                    }
-                ]
-            }
-        },
-        "DTRreplica03": {
-            "DependsOn": "WaitCondition03",
-            "Type": "AWS::EC2::Instance",
-            "Properties": {
-                "AvailabilityZone": {
-                    "Fn::Select": [
-                        "0",
-                        {
-                            "Fn::GetAZs": {
-                                "Ref": "AWS::Region"
-                            }
-                        }
-                    ]
-                },
-                "InstanceType": {
-                    "Ref": "DTRInstanceType"
-                },
-                "KeyName": {
-                    "Ref": "KeyName"
-                },
-                "ImageId": {
-                    "Fn::FindInMap": [
-                        "AWSRegionArch2AMI",
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        {
-                            "Fn::FindInMap": [
-                                "AWSInstanceType2Arch",
-                                {
-                                    "Ref": "DTRInstanceType"
-                                },
-                                "Arch"
-                            ]
-                        }
-                    ]
-                },
-                "NetworkInterfaces": [
-                    {
-                        "AssociatePublicIpAddress": "true",
-                        "DeleteOnTermination": "true",
-                        "DeviceIndex": "0",
-                        "SubnetId": {
-                            "Ref": "PrivateSubnetAz1"
-                        },
-                        "GroupSet": [
-                            {
-                                "Ref": "DefaultSG"
-                            }
-                        ]
-                    }
-                ],
-                "BlockDeviceMappings": [
-                    {
-                        "DeviceName": "/dev/sda1",
-                        "Ebs": { 
-                            "VolumeSize": { "Ref": "RootVolumeSize" },
-                            "VolumeType": "gp2"
-                        }
-                    }
-                ],
-                "UserData": {
-                    "Fn::Base64": {
-                        "Fn::Join": [
-                            "\n",
-                            [
-                                "#!/bin/bash -ex",
-                                "echo 'Installing Docker' ",
-                                "sudo hostname dtr-replica-03\n",
-                                "export HOSTNAME=dtr-replica-03 \n",
-                                "sudo sed -i 's/localhost/dtr-replica-03/g' /etc/hosts \n",
-                                "echo $HOSTNAME | sudo tee  /etc/hostname \n",
-                                "curl -sSL https://packages.docker.com/1.11/install.sh | sh \n",
-                                "sudo usermod -aG docker ubuntu \n",
-                                "echo 'Install CFN-helper Package' ",
-                                "apt-get -y install python-pip unzip",
-                                "pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz",
-                                "cp /usr/local/init/ubuntu/cfn-hup /etc/init.d/cfn-hup",
-                                "chmod +x /etc/init.d/cfn-hup",
-                                "update-rc.d cfn-hup defaults",
-                                "service cfn-hup start",
-                                "echo 'Install AWS CLI'",
-                                "curl \"https://s3.amazonaws.com/aws-cli/awscli-bundle.zip\" -o \"awscli-bundle.zip\"",
-                                "unzip awscli-bundle.zip",
-                                "./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws",
-
-                                {
-                                    "Fn::Join": [
-                                        "",
-                                        [
-                                            "#!/bin/bash\n",
-                                            "export PRIVATE_IP=`curl http://169.254.169.254/latest/meta-data/local-ipv4` \n",
-                                            "export UCP_URL=https://",
-                                            {
-                                                "Fn::GetAtt": [
-                                                    "Controller",
-                                                    "PrivateIp"
-                                                ]
-                                            },
-                                            "\n",
-                                            "export DTRFQDN=",
-                                            {
-                                                "Ref": "DTRFQDN"
-                                            },
-                                            "\n",
-                                            "export UCPFQDN=",
-                                            {
-                                                "Ref": "UCPFQDN"
-                                            },
-                                            "\n",
-                                            "curl --insecure $UCP_URL/ca > ca.pem\n",
-                                            "export UCP_FINGERPRINT=$(openssl x509 -in ca.pem -noout -sha256 -fingerprint | awk -F= '{ print $2 }' )\n",
-                                            "# Installing UCP Node\n",
-                                            "sudo -E docker run --rm -i --name ucp -e UCP_ADMIN_USER=admin -e UCP_ADMIN_PASSWORD=ddconaws -v /var/run/docker.sock:/var/run/docker.sock docker/ucp:1.1.3 join --debug --url $UCP_URL --fingerprint $UCP_FINGERPRINT \n",
-                                            "# Installing DTR Replica\n",
-                                            "sleep 60 \n",
-                                            "sudo -E docker run --rm -i docker/dtr:2.0.3 join --debug --ucp-url https://$UCPFQDN --ucp-node dtr-replica-03 --ucp-username admin --ucp-password ddconaws --ucp-insecure-tls --replica-id 000000000003 --existing-replica-id 000000000001 \n",
-                                            "#Register instance with ELB\n",
-                                            "INSTANCE=\"$(curl 169.254.169.254/latest/meta-data/instance-id)\"\n",
-                                            "aws elb register-instances-with-load-balancer --load-balancer-name ",
-                                             { "Ref": "DTRElasticLoadBalancer" },
-                                             " --instances $INSTANCE",
-                                             " --region ", {
-                                          "Ref": "AWS::Region"
-                                          }
-                                        ]
-                                    ]
-                                }
-                            ]
-                        ]
-                    }
-                },
-                "IamInstanceProfile": {"Ref": "DTRReplicaProfile"},
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    {
-                                        "Ref": "AWS::StackName"
-                                    },
-                                    "DTRreplica03"
-                                ]
-                            ]
-                        }
-                    }
-                ]
-            }
-        },
         "DTRElasticLoadBalancer": {
             "DependsOn": "WaitCondition01",
             "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
