@@ -1,0 +1,87 @@
+#accessing minikube service
+minikube service -n test my-nginx-service --url
+
+
+#export certs for minikube
+openssl pkcs12 -export -out ~/.minikube/minikube.pfx -inkey ~/.minikube/apiserver.key -in ~/.minikube/apiserver.crt -certfile ~/.minikube/ca.crt -passout pass:secret
+
+
+#validating kubernetes
+curl --cacert ~/.minikube/ca.crt --cert ~/.minikube/minikube.pfx:secret https://$(minikube ip):8443
+
+
+#viewing minikube configuration in kubernetes
+kubectl config view --raw
+kubectl config current-context
+
+
+#mini kube boot2docker commands
+minikube ssh
+minikube docker-env
+minikube ip
+minikube status
+
+
+#service account config file
+
+cat /Users/pinbaraj/Downloads/qubeship-5c18a9ddd2e7.json
+http://kubernetes.io/docs/user-guide/kubeconfig-file/
+
+
+kubectl describe secret $(kubectl get secrets | grep default | cut -f1 -d ' ') | grep -E '^token' | cut -f2 -d':' | tr -d '\t'
+
+kubectl get secrets
+
+kubectl describe secret default-token-qq93r
+
+curl -k https://192.168.99.101:8443 --header "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRlZmF1bHQtdG9rZW4tcXE5M3IiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGVmYXVsdCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjNiOGNlNDk1LWI4NTYtMTFlNi04NDk5LWU2YmYwYjczYTExZCIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OmRlZmF1bHQifQ.NrYGi5_yGk0lE4utLAsP_6VgpTXIlgepsT1LKNpngaS_Df1zZ9s8WJxzTdrjZkuJ6whkUnQ2zaIsV2EVX3basAr_ORk8n5_FNxMtap4hLZw1irMBW8SHJusSCD-XSCX_O_5vvV4NSsnm2yuMn2sF5oEg-9rCUTBIOoIbzUi6l3S_f0hSJBPS3wsHDM9TwnJ8cNXw31PX9afH2PcLkJb31dyMpcVuEwX2u_agX5TwiL16ulRS1IVUWWkzb_OX3AXqlfvcUjQToNYWZ8D5dDKxWdT4XiKmsMcAQhTuaaPpEEDQGqtJSjSLGQzHH0MZBFlWzf602HnO1hHx3FXzbWGwag"
+
+
+http://cloudgeekz.com/1045/kubernetes-authentication-and-authorization.html
+
+http://kubernetes.io/docs/admin/authorization/
+
+kubectl create secret generic shared-secret --from-literal=key1=supersecret --from-literal=key2=topsecret --namespace test
+
+-----------
+
+https://support.cloudbees.com/hc/en-us/articles/217708168-create-credentials-from-groovy
+
+import com.cloudbees.plugins.credentials.impl.*;
+import com.cloudbees.plugins.credentials.*;
+import com.cloudbees.plugins.credentials.domains.*;
+import com.cloudbees.plugins.credentials.common.CertificateCredentials;
+
+
+String keyfile = "/Users/pinbaraj/.minikube/minikube.pfx"
+def ksm2 = new CertificateCredentialsImpl.UploadedKeyStoreSource(keyfile)
+Credentials ck2 = new CertificateCredentialsImpl(CredentialsScope.GLOBAL,java.util.UUID.randomUUID().toString(), "description", "secret", ksm2)
+SystemCredentialsProvider.getInstance().getStore().addCredentials(Domain.global(), ck2)
+
+def creds = com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials(
+        com.cloudbees.plugins.credentials.Credentials.class,
+        Jenkins.instance,
+        null,
+        null
+);
+for (c in creds) {
+    println(c.id + ": " + c.description)
+  if(c instanceof CertificateCredentials) {
+    CertificateCredentials certificateCredentials = (CertificateCredentials) c;
+    println("certificateCredentials")
+
+    println(certificateCredentials.getKeyStore() + ":" + certificateCredentials.getPassword().getPlainText())
+  }else {
+  	println("non certificate")
+  }
+
+}
+
+
+
+--------
+https://github.com/samrocketman/jenkins-bootstrap-jervis/blob/master/scripts/configure-docker-cloud.groovy
+https://github.com/jenkinsci/docker-plugin/blob/master/docker-plugin/src/main/java/com/nirima/jenkins/plugins/docker/client/ClientConfigBuilderForPlugin.java
+
+
+
