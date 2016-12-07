@@ -1,6 +1,3 @@
-/*node {
-    sh 'env'
-}*/
 podTemplate(
      cloud: 'minikube',
      label: 'docker',
@@ -12,14 +9,10 @@ podTemplate(
       volumes: [secretVolume(secretName: 'shared-secret', mountPath: '/etc/shared-secrets')],
       ) {
         node ('docker') {
-            sh 'env'
             stage 'Get a Maven project'
-            //git 'https://github.com/jenkinsci/kubernetes-plugin.git'
             git 'https://github.com/pgrimard/spring-boot-hello-world.git'
             container(name:'maven', cloud:'minikube') {
                 stage 'Build a Maven project'
-                sh 'echo "hello world"'
-                //sleep 60
                 try {
                 sh 'mvn clean install'
                 }catch (Exception ex) {

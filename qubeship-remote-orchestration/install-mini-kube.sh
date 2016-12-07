@@ -1,5 +1,33 @@
 #!/bin/bash
 # Get the Kernel Name
+install_minikube=0
+test_minikube=0
+install_kubectl=0
+export_certs=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --install-minikube) 
+	  install_minikube=1
+      ;;
+    --test-minikube) 
+	  test_minikube=1
+      ;;
+    --install-kubectl)
+      install_kubectl=1
+      ;;
+    --export-certs)
+	  export_certs=1
+	  ;;
+    *)
+      printf "***************************\n"
+      printf "* Error: Invalid argument.*\n"
+      printf "***************************\n"
+      exit 1
+  esac
+  shift
+done
+
+
 Kernel=$(uname -s)
 case "$Kernel" in
     Linux)  Kernel="linux"              ;;
@@ -24,7 +52,52 @@ case "$Architecture" in
 esac
 
 osarch="$Kernel/$Architecture"
+echo $osarch
 
-#echo
-#echo "Operating System Architecture : $Architecture"
-#echo
+if [ $osarch == "darwin/amd64"]; then
+	if[ $install_minikube == 1 ]; then
+		curl -Lo minikube https://storage.googleapis.com/minikube/releases/v0.13.1/minikube-darwin-amd64 && \
+   		chmod +x minikube && \
+   		mv minikube /usr/local/bin/
+	fi
+	if [ $install_kubectl == 1 ]; then	
+   		curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v1.3.0/bin/darwin/amd64/kubectl && \
+   		chmod +x kubectl && \
+   		mv kubectl /usr/local/bin/
+   	fi
+elif [ $osarch == "linux/amd64"]; then
+	if[ $install_minikube == 1 ]; then
+		curl -Lo minikube https://storage.googleapis.com/minikube/releases/v0.13.1/minikube-linux-amd64 && \
+   		chmod +x minikube && \ 
+   		sudo mv minikube /usr/local/bin/
+	fi
+	if [ $install_kubectl == 1 ]; then	
+	   	curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v1.3.0/bin/linux/amd64/kubectl && \
+   		chmod +x kubectl && \ 
+   		sudo mv kubectl /usr/local/bin/
+   	fi
+fi
+if[ $install_minikube == 1 ]; then
+	minikube start
+fi
+if[ $test_minikube == 1 ]; then
+	echo "launching dashboard : $(minikube ip)"
+	minikube dashboard
+	minikube docker-env
+	kubectl create namespace test
+	kubectl create -f my-nginx-deployment.yaml --record
+	kubectl create -f my-nginx-service.yaml --record
+	echo "minikube runs $(minikube service -n test my-nginx-service --url)"
+	open $(minikube service -n test my-nginx-service --url)
+	echo "exporting certs"
+	openssl pkcs12 -export -out ~/.minikube/minikube.pfx -inkey ~/.minikube/apiserver.key -in ~/.minikube/apiserver.crt -certfile ~/.minikube/ca.crt -passout pass:secret
+	#validating kubernetes
+	echo "testing kubernetes api with certs curl --cacert ~/.minikube/ca.crt --cert ~/.minikube/minikube.pfx:secret https://$(minikube ip):8443"
+	curl --cacert ~/.minikube/ca.crt --cert ~/.minikube/minikube.pfx:secret https://$(minikube ip):8443
+
+fi
+
+
+if [ $export_certs == 1]; then
+
+fi
