@@ -1,3 +1,10 @@
+#links
+
+http://kubernetes.io/docs/getting-started-guides/minikube/#install-minikube
+https://github.com/kubernetes/minikube/releases
+https://github.com/kubernetes/minikube
+
+
 #accessing minikube service
 minikube service -n test my-nginx-service --url
 
