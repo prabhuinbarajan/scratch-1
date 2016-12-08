@@ -23,6 +23,9 @@ podTemplate(
             stage 'Get a Golang project'
             git url: 'https://github.com/golang/example.git'
             container(name:'golang', cloud:'minikube') {
+                 
+                 
+                 input 'ready?'
                 stage 'Build a Go project'
                 sh """
                 mkdir -p /go/src/github.com/golang/
