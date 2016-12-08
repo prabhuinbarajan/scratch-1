@@ -94,6 +94,8 @@ if [ $test_minikube == 1 ]; then
 	kubectl create -f my-nginx-service.yaml --record
 	echo "minikube runs $(minikube service -n test my-nginx-service --url)"
 	open $(minikube service -n test my-nginx-service --url)
+
+  kubectl create secret generic shared-secret --from-literal=key1=supersecret --from-literal=key2=topsecret --namespace test
 fi
 
 if [ $export_certs == 1 ]; then
