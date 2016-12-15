@@ -1,5 +1,5 @@
 #links
-
+http://pghalliday.com/jenkins/groovy/sonar/chef/configuration/management/2014/09/21/some-useful-jenkins-groovy-scripts.html
 http://kubernetes.io/docs/getting-started-guides/minikube/#install-minikube
 https://github.com/kubernetes/minikube/releases
 https://github.com/kubernetes/minikube
@@ -91,4 +91,15 @@ https://github.com/samrocketman/jenkins-bootstrap-jervis/blob/master/scripts/con
 https://github.com/jenkinsci/docker-plugin/blob/master/docker-plugin/src/main/java/com/nirima/jenkins/plugins/docker/client/ClientConfigBuilderForPlugin.java
 
 
+notes:
+
+git clone --bare https://github.com/jenkinsci/kubernetes-plugin kubernetes-plugin-bare.git/
+cd kubernetes-plugin-bare.git/
+git push --mirror https://github.com/Qubeship/kubernetes-plugin
+rm -rf kubernetes-plugin-bare.git/
+git clone https://github.com/Qubeship/kubernetes-plugin
+git remote add upstream https://github.com/jenkinsci/kubernetes-plugin
+git fetch upstream
+git merge upstream/master
+git push
 

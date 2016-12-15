@@ -6,7 +6,7 @@ podTemplate(
         containerTemplate(name: 'maven', image: 'maven:3.3.9-jdk-8-alpine', ttyEnabled: true, command: 'cat'),
         containerTemplate(name: 'golang', image: 'golang:1.6.3-alpine', ttyEnabled: true, command: 'cat')
       ],
-      volumes: [secretVolume(secretName: 'shared-secret', mountPath: '/etc/shared-secrets')],
+      volumes: [secretVolume(secretName: 'shared-secret', mountPath: '/etc/shared-secrets'), hostPathVolume(hostPath:'/var/run/docker.sock',mountPath:'/var/run/docker.sock') ],
       ) {
         node ('docker') {
             stage 'Get a Maven project'
@@ -35,5 +35,3 @@ podTemplate(
         }
     
 }
-
-
