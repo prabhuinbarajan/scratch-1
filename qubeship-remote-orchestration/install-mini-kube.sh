@@ -1,4 +1,7 @@
 #!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $DIR/
+
 # Get the Kernel Name
 install_minikube=0
 test_minikube=0
@@ -54,8 +57,8 @@ esac
 osarch="$Kernel/$Architecture"
 echo $osarch
 
-if [ $osarch == "darwin/amd64"]; then
-	if[ $install_minikube == 1 ]; then
+if [ $osarch == "darwin/amd64" ]; then
+	if [ $install_minikube == 1 ]; then
 		curl -Lo minikube https://storage.googleapis.com/minikube/releases/v0.13.1/minikube-darwin-amd64 && \
    		chmod +x minikube && \
    		mv minikube /usr/local/bin/
@@ -64,9 +67,9 @@ if [ $osarch == "darwin/amd64"]; then
    		curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v1.3.0/bin/darwin/amd64/kubectl && \
    		chmod +x kubectl && \
    		mv kubectl /usr/local/bin/
-   	fi
+  fi
 elif [ $osarch == "linux/amd64"]; then
-	if[ $install_minikube == 1 ]; then
+	if [ $install_minikube == 1 ]; then
 		curl -Lo minikube https://storage.googleapis.com/minikube/releases/v0.13.1/minikube-linux-amd64 && \
    		chmod +x minikube && \ 
    		sudo mv minikube /usr/local/bin/
@@ -75,12 +78,14 @@ elif [ $osarch == "linux/amd64"]; then
 	   	curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v1.3.0/bin/linux/amd64/kubectl && \
    		chmod +x kubectl && \ 
    		sudo mv kubectl /usr/local/bin/
-   	fi
+  fi
 fi
-if[ $install_minikube == 1 ]; then
+
+if [ $install_minikube == 1 ]; then
 	minikube start
 fi
-if[ $test_minikube == 1 ]; then
+
+if [ $test_minikube == 1 ]; then
 	echo "launching dashboard : $(minikube ip)"
 	minikube dashboard
 	minikube docker-env
@@ -89,15 +94,14 @@ if[ $test_minikube == 1 ]; then
 	kubectl create -f my-nginx-service.yaml --record
 	echo "minikube runs $(minikube service -n test my-nginx-service --url)"
 	open $(minikube service -n test my-nginx-service --url)
-	echo "exporting certs"
-	openssl pkcs12 -export -out ~/.minikube/minikube.pfx -inkey ~/.minikube/apiserver.key -in ~/.minikube/apiserver.crt -certfile ~/.minikube/ca.crt -passout pass:secret
-	#validating kubernetes
-	echo "testing kubernetes api with certs curl --cacert ~/.minikube/ca.crt --cert ~/.minikube/minikube.pfx:secret https://$(minikube ip):8443"
-	curl --cacert ~/.minikube/ca.crt --cert ~/.minikube/minikube.pfx:secret https://$(minikube ip):8443
 
+  kubectl create secret generic shared-secret --from-literal=key1=supersecret --from-literal=key2=topsecret --namespace test
 fi
 
-
-if [ $export_certs == 1]; then
-
+if [ $export_certs == 1 ]; then
+  echo "exporting certs"
+  openssl pkcs12 -export -out ~/.minikube/minikube.pfx -inkey ~/.minikube/apiserver.key -in ~/.minikube/apiserver.crt -certfile ~/.minikube/ca.crt -passout pass:secret
+  #validating kubernetes
+  echo "testing kubernetes api with certs curl --cacert ~/.minikube/ca.crt --cert ~/.minikube/minikube.pfx:secret https://$(minikube ip):8443"
+  curl --cacert ~/.minikube/ca.crt --cert ~/.minikube/minikube.pfx:secret https://$(minikube ip):8443
 fi
