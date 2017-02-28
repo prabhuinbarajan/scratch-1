@@ -1,0 +1,30 @@
+#!/bin/bash
+env_to_copy=dev; 
+srcid_to_copy=prabhu; 
+targetid=jiang; 
+base_vault_path="secret/resources/qubeship/$env_to_copy"
+srcpath=$base_vault_path/$srcid_to_copy
+targetpath=$base_vault_path/$targetid
+
+function copy_path()
+{
+	src_base=$1
+	target_base=$2
+	for srckey in `vault list -format=json $src_base | jq ".[]" | sed 's/"//g'`; do 
+
+		json=`vault read --format=json $src_base/$srckey | jq '.data.value'| sed 's/"//g'`; 
+		if [ "$json" == null ]; then
+			json=`vault read --format=json $src_base/$srckey | jq '.data'`; 
+			for key in `echo $json | jq 'keys | .[]' | sed 's/\"//g'`; do  
+				val=`echo $json | jq ".$key"`; 
+				echo -n "$val" | vault write $target_base/$srckey/$key value=- ; 
+			done
+		else
+			echo -n "$json" | vault write $target_base/$srckey value=- ;
+		fi
+
+	done
+}
+
+copy_path $srcpath $targetpath
+copy_path $srcpath/firebase_qubeship $targetpath/firebase_qubeship
