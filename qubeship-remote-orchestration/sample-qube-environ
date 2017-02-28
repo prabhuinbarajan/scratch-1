@@ -1,0 +1,54 @@
+import groovy.json.JsonSlurper
+podTemplate(
+     cloud: "${envid}",
+     label: 'docker',
+     containers: [
+        containerTemplate(name: 'maven', image: 'maven:3.3.9-jdk-8-alpine', ttyEnabled: true, command: 'cat'),
+    
+      ],
+    //  volumes: [secretVolume(secretName: 'shared-secret', mountPath: '/etc/shared-secrets'), hostPathVolume(hostPath:'/var/run/docker.sock',mountPath:'/var/run/docker.sock') ],
+      ) {
+        node ('docker') {
+            stage 'Get a Maven project'
+            git 'https://github.com/pgrimard/spring-boot-hello-world.git'
+            container(name:'maven', cloud:"${envid}") {
+                
+                stage 'Build a Maven project'
+                try {
+                sh 'mvn clean install'
+                }catch (Exception ex) {
+                    ex.printStackTrace()
+                }
+                
+                
+                stage 'Push maven container'
+                def response;
+                try {
+                 //   input 'ready?'
+                    // def response = httpRequest acceptType: 'APPLICATION_JSON', contentType: 'APPLICATION_JSON', httpMode: 'GET', url: "http://192.168.99.101:7777/v1/environments/${envid}", customHeaders: "Authorization: Bearer eyJ0eXAiOiAiSldUIiwgImFsZyI6ICJSUzI1NiJ9.eyJhdWQiOiAiaHR0cHM6Ly9pZGVudGl0eXRvb2xraXQuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLmlkZW50aXR5LmlkZW50aXR5dG9vbGtpdC52MS5JZGVudGl0eVRvb2xraXQiLCAidWlkIjogIjFiMzdiOTFiLTIwOTctMzg0MC05NzU2LWQ0ZjljMTBkMDllNSIsICJleHAiOiAxNDc4NTQ3NDM4LCAianRpIjogInVFZnNwWWZQaFYyUGVkT2RISTNIbUE9PSIsICJpYXQiOiAxNDc4NTQzODM4LCAiY2xhaW1zIjogeyJ0b2tlbiI6ICI2NjczM2YyNzQwNjExOWUyNWIxYWMwYjFjMWNmZGJmODM2NGE3MWFkIiwgImNsaWVudCI6ICJjbGkiLCAicHJvdmlkZXIiOiAiZ2l0aHViIn0sICJzdWIiOiAiYXBpLWF1dGhAcXViZXNoaXAtM2RmYWEuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCAiaXNzIjogImFwaS1hdXRoQHF1YmVzaGlwLTNkZmFhLmlhbS5nc2VydmljZWFjY291bnQuY29tIiwgIm5iZiI6IDE0Nzg1NDM4Mzh9.abMYpnSIpHIxYWymsqfv1bouApdgqLph-Uu3SqF7hpiBGnWGhrpvOWVJlBD5os3RkKbKi6GNykLTDPAWMK0dKHEGos86NmyBr2mxdr413HTZJ2IfDE1rBrBrfyuEbZxZshkZjjIDEtMLYH2j-E6HV9yKOiYKj8DixWuTlZdkL0e6qmb4z8vC-V5fFr_QAKqccJGUjUPohRQy3S0tIEZifINGLBKidWWPVihWw7dpdFLw21Gu2ugn9a86XhY1_Y43y9g2BgpKAU6ZeaAgM6u0PRemYFFXxFQRbfitnftk-q-wEVJalQvt-CIqyfP14OPxzInspMahbyobik4YV_ZMBA"
+                    withCredentials([[$class: 'StringBinding', credentialsId: 'qube-token', variable: 'QUBE_TOKEN']]) {
+                     println("token is $env.QUBE_TOKEN")
+                     response = httpRequest url: "${QUBE_SERVER}/v1/environments/${envid}", customHeaders:[[name:"Authorization", value:"$env.QUBE_TOKEN"]]
+                      println('Status-1: '+response.status)
+                     println('Responses-1: '+response.content)
+                     def result = new JsonSlurper().parseText(response.content)
+                     println('result:'+result)
+                     println('tenant: '+result.tenant)
+                     println('category: '+result.category)
+                     println('provider: '+result.provider)
+                     println('endPoint: '+result.endPoint)
+                     println('namespace: '+result.namespace)
+                       
+                    }
+                }catch (Exception ex) {
+                    ex.printStackTrace()
+                    println("exception raised"+ex)
+                }
+                
+                
+                 
+            }
+    
+        }
+    
+}
