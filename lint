@@ -1,0 +1,2 @@
+#!/bin/bash
+.tox/lint/bin/flake8 --ignore E111 --exclude=env,.tox/ --import-order-style=google 
