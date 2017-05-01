@@ -1,3 +1,6 @@
 #!/bin/bash
  echo 'function vaultssh() { echo ${1}; tmpfile=$(mktemp /tmp/secret.XXX); chmod 600 /tmp/secret.XXX; vault read -field=private_key -format=raw secret/resources/qubeship/qa > /tmp/secret.XXX; ssh -i /tmp/secret.XXX root@${1}; };' >> ~/.bash_profile
+echo 'function vaultscpto() { echo ${1}; tmpfile=$(mktemp /tmp/secret.XXX); chmod 600 /tmp/secret.XXX; vault read -field=private_key -format=raw secret/resources/qubeship/qa > /tmp/secret.XXX; scp -i /tmp/secret.XXX $1 root@${2}; };' >> ~/.bash_profile
+echo 'function vaultscpfrom() { echo ${1}; tmpfile=$(mktemp /tmp/secret.XXX); chmod 600 /tmp/secret.XXX; vault read -field=private_key -format=raw secret/resources/qubeship/qa > /tmp/secret.XXX; scp -i /tmp/secret.XXX root@${1} $2; };' >> ~/.bash_profile
+
 source ~/.bash_profile
